@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Particle Forge // particle-forge.slippylabs.com</title>
+<meta name="description" content="Design a particle emitter and watch it — bursts and streams, gravity, drag, colour and size over lifetime, additive blending — then export the config plus drop-in JavaScript or C#. Runs entirely in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://particle-forge.slippylabs.com/">
+<meta property="og:title" content="Particle Forge // particle-forge.slippylabs.com">
+<meta property="og:description" content="Design a particle emitter and watch it — bursts and streams, gravity, drag, colour and size over lifetime, additive blending — then export the config plus drop-in JavaScript or C#. Runs entirely in your browser.">
+<meta property="og:image" content="https://particle-forge.slippylabs.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Particle Forge // particle-forge.slippylabs.com">
+<meta name="twitter:description" content="Design a particle emitter and watch it — bursts and streams, gravity, drag, colour and size over lifetime, additive blending — then export the config plus drop-in JavaScript or C#. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://particle-forge.slippylabs.com/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2234%22%20r%3D%2222%22%20fill%3D%22%231c8a52%22%20stroke%3D%22%2339ff8f%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2216%22%20r%3D%228%22%20fill%3D%22%231c8a52%22%20stroke%3D%22%2339ff8f%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2244%22%20cy%3D%2216%22%20r%3D%228%22%20fill%3D%22%231c8a52%22%20stroke%3D%22%2339ff8f%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#050b10">
+<link rel="stylesheet" href="style.css?v=1">
+<script>/* perf-lite: drop blend/blur effects on low-power devices. ?fx=lite or ?fx=full to override (persisted). */
+(function(){try{var k="slippy-fx",m=location.search.match(/[?&]fx=(lite|full)/),v=m?m[1]:localStorage.getItem(k);if(m)localStorage.setItem(k,v);if(v==="lite"||(v!=="full"&&(navigator.hardwareConcurrency||8)<=2))document.documentElement.classList.add("perf-lite");}catch(e){}})();</script>
+</head>
+<body>
+
+<div class="starfield"></div>
+<div class="scanlines"></div>
+
+<main class="page-wrap">
+  <div class="hud-panel wide">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <div class="callsign-row">
+      <div class="toad-avatar-wrap">
+        <svg class="toad-avatar" width="46" height="46" viewBox="0 0 64 64">
+          <circle cx="32" cy="34" r="22" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="20" cy="16" r="8" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="44" cy="16" r="8" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="20" cy="16" r="3.5" fill="#050b10"/>
+          <circle cx="44" cy="16" r="3.5" fill="#050b10"/>
+          <ellipse cx="24" cy="32" rx="4.5" ry="5.5" fill="#050b10"/>
+          <ellipse cx="40" cy="32" rx="4.5" ry="5.5" fill="#050b10"/>
+          <circle cx="24" cy="30" r="1.4" fill="#39ff8f"/>
+          <circle cx="40" cy="30" r="1.4" fill="#39ff8f"/>
+          <path d="M22 42 Q32 48 42 42" stroke="#050b10" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="lock-reticle"></div>
+      </div>
+      <span class="callsign">Workshop Division // Tool</span>
+      <div class="nav-links">
+        <a href="https://projects.slippylabs.com/" class="logout-link">← Archive</a>
+      </div>
+    </div>
+
+
+    <h1>PARTICLE FORGE</h1>
+    <p class="subtitle">Sparks, smoke, blood, confetti, magic. All the same handful of numbers, and the difference between a hit that lands and one that does not is usually the curve on the alpha.</p>
+
+    <div class="tool-controls pf-presets" id="preset-bar">
+      <button class="tool-btn" data-preset="sparks">Sparks</button>
+      <button class="tool-btn" data-preset="explosion">Explosion</button>
+      <button class="tool-btn" data-preset="smoke">Smoke</button>
+      <button class="tool-btn" data-preset="fire">Fire</button>
+      <button class="tool-btn" data-preset="magic">Magic</button>
+      <button class="tool-btn" data-preset="confetti">Confetti</button>
+      <button class="tool-btn" data-preset="rain">Rain</button>
+      <button class="tool-btn ghost" data-preset="trail">Trail</button>
+    </div>
+
+    <div class="pf-layout">
+      <div>
+        <div class="pf-stage-wrap">
+          <canvas id="stage" width="640" height="440"
+                  aria-label="Particle preview. Click to move the emitter."></canvas>
+        </div>
+        <div class="tool-controls">
+          <button class="tool-btn" id="playpause-btn" aria-pressed="true">Pause</button>
+          <button class="tool-btn ghost" id="restart-btn">Restart</button>
+          <button class="tool-btn ghost" id="reseed-btn">Reseed</button>
+          <button class="tool-btn ghost" id="bg-btn">Background: dark</button>
+          <div class="tool-field-row pf-inline">
+            <label class="tool-field-label" for="scrub-slider">Scrub</label>
+            <input type="range" id="scrub-slider" min="0" max="400" step="1" value="0">
+          </div>
+        </div>
+        <div class="net-grid">
+          <div class="net-tile"><div class="net-tile-label">Alive</div><div class="net-tile-value" id="stat-alive">—</div></div>
+          <div class="net-tile"><div class="net-tile-label">Emitted</div><div class="net-tile-value" id="stat-emitted">—</div></div>
+          <div class="net-tile"><div class="net-tile-label">Time</div><div class="net-tile-value" id="stat-time">—</div></div>
+          <div class="net-tile"><div class="net-tile-label">Peak alive</div><div class="net-tile-value" id="stat-peak">—</div></div>
+        </div>
+        <p class="tool-note" id="cap-note"></p>
+      </div>
+
+      <div class="pf-rack" id="rack"></div>
+    </div>
+
+    <h2 class="pf-h2">Export</h2>
+    <div class="tool-field-row">
+      <label class="tool-field-label" for="lang-select">Format</label>
+      <select class="tool-select" id="lang-select">
+        <option value="json" selected>JSON config</option>
+        <option value="js">JavaScript</option>
+        <option value="csharp">C#</option>
+      </select>
+    </div>
+    <pre class="tool-output pf-code" id="code-out"></pre>
+    <div class="tool-controls">
+      <button class="tool-btn" id="copy-btn">Copy</button>
+      <button class="tool-btn ghost" id="download-btn">Download</button>
+      <a id="download-link" hidden></a>
+    </div>
+    <div class="copy-toast" id="toast">Copied</div>
+    <div class="comm-window">
+      <div class="comm-portrait">
+        <svg width="36" height="36" viewBox="0 0 64 64">
+          <circle cx="32" cy="34" r="22" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="20" cy="16" r="8" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="44" cy="16" r="8" fill="#1c8a52" stroke="#39ff8f" stroke-width="2"/>
+          <circle cx="20" cy="16" r="3.5" fill="#050b10"/>
+          <circle cx="44" cy="16" r="3.5" fill="#050b10"/>
+          <ellipse cx="24" cy="32" rx="4.5" ry="5.5" fill="#050b10"/>
+          <ellipse cx="40" cy="32" rx="4.5" ry="5.5" fill="#050b10"/>
+          <circle cx="24" cy="30" r="1.4" fill="#39ff8f"/>
+          <circle cx="40" cy="30" r="1.4" fill="#39ff8f"/>
+          <path d="M22 42 Q32 48 42 42" stroke="#050b10" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="comm-body">
+        <div class="comm-label"><span class="dot"></span> Incoming Transmission &mdash; Slippy</div>
+        <p>&quot;A particle system is a function of time. Store state per frame and it will look different on a 144Hz monitor.&quot;</p>
+      </div>
+    </div>
+
+    <a href="https://projects.slippylabs.com/" class="hud-btn">← Back to Archive</a>
+  </div>
+</main>
+
+
+<script>
+/* ---- A particle system as a function of time ---------------------------------
+   The usual way to write one of these is to keep an array of particles and
+   nudge each of them every frame. It works, and it has two problems that only
+   show up later: the result depends on the frame rate, and it cannot be
+   rewound.
+
+   This one is built the other way round. Nothing is stored between frames.
+   `systemAt(config, t)` returns the particles that are alive at time t, worked
+   out from scratch, and the renderer just calls it with the current time. That
+   gives three things for free:
+
+     * identical output at 30, 60 or 144 frames per second -- provably, not
+       approximately;
+     * a scrub bar, because any time is as cheap as any other;
+     * a test that can compare the answer with a closed form instead of with
+       another copy of the same loop.
+
+   It costs the right to have particles interact with each other or with the
+   world. That is the trade, and for sparks, smoke and confetti it is a good
+   one. */
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function next() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Each particle draws from its OWN stream, keyed on the emitter seed and the
+   particle's index. A single shared stream consumed in frame order would make
+   the effect depend on how many frames happened to elapse -- which is exactly
+   the frame-rate dependence this design exists to avoid. */
+function particleRandom(seed, index) {
+  let h = (seed ^ 0x9e3779b9) >>> 0;
+  h = Math.imul(h ^ (index + 0x85ebca6b), 0xc2b2ae35) >>> 0;
+  h = (h ^ (h >>> 15)) >>> 0;
+  return mulberry32(h);
+}
+
+const DEFAULTS = {
+  mode: 'continuous',        /* continuous | burst */
+  rate: 90,                  /* particles per second */
+  burstCount: 60,
+  loopInterval: 1.2,         /* seconds between bursts, 0 = once */
+  duration: 0,               /* 0 = forever (continuous only) */
+  maxParticles: 900,
+  seed: 1234,
+
+  lifeMin: 0.6,
+  lifeMax: 1.2,
+
+  originSpread: 2,           /* radius the particle starts within */
+  angleCentre: -90,          /* degrees, 0 = right, negative = up */
+  angleSpread: 360,
+  speedMin: 60,
+  speedMax: 180,
+
+  gravityX: 0,
+  gravityY: 260,
+  drag: 0,                   /* per second; velocity decays as e^(-drag*t) */
+
+  sizeStart: 6,
+  sizeEnd: 0,
+  sizeJitter: 0.3,
+  sizeCurve: 1,              /* exponent on the interpolation */
+
+  alphaStart: 1,
+  alphaEnd: 0,
+  alphaCurve: 1,
+
+  colourStart: '#ffd27f',
+  colourEnd: '#ff3c1f',
+
+  spinMin: -180,             /* degrees per second */
+  spinMax: 180,
+
+  shape: 'circle',           /* circle | square | spark | ring */
+  blend: 'additive',         /* additive | normal */
+};
+
+/* ---- Emission ----------------------------------------------------------------
+   Particle n is emitted at a time that depends only on n, so "which particles
+   exist right now" is arithmetic rather than history. */
+function emissionTime(config, index) {
+  if (config.mode === 'burst') {
+    const per = Math.max(1, Math.round(config.burstCount));
+    const wave = Math.floor(index / per);
+    if (config.loopInterval <= 0) return wave === 0 ? 0 : Infinity;
+    return wave * config.loopInterval;
+  }
+  const rate = Math.max(1e-6, config.rate);
+  const t = index / rate;
+  if (config.duration > 0 && t >= config.duration) return Infinity;
+  return t;
+}
+
+/* The highest index that could have been emitted by time t. */
+function lastEmittedIndex(config, t) {
+  if (config.mode === 'burst') {
+    const per = Math.max(1, Math.round(config.burstCount));
+    if (config.loopInterval <= 0) return t >= 0 ? per - 1 : -1;
+    const wave = Math.floor(t / config.loopInterval);
+    return (wave + 1) * per - 1;
+  }
+  const rate = Math.max(1e-6, config.rate);
+  const cap = config.duration > 0 ? Math.min(t, config.duration - 1e-12) : t;
+  return Math.floor(cap * rate);
+}
+
+/* ---- One particle -------------------------------------------------------------
+   Every random draw happens here, in a fixed order, from that particle's own
+   stream -- so adding a draw later changes every particle, and the order is
+   part of the format. */
+function particleSeedValues(config, index) {
+  const rnd = particleRandom(config.seed, index);
+  const life = config.lifeMin + rnd() * Math.max(0, config.lifeMax - config.lifeMin);
+  const angle = ((config.angleCentre + (rnd() - 0.5) * config.angleSpread) * Math.PI) / 180;
+  const speed = config.speedMin + rnd() * Math.max(0, config.speedMax - config.speedMin);
+  const originAngle = rnd() * Math.PI * 2;
+  const originRadius = Math.sqrt(rnd()) * config.originSpread;  /* sqrt for a uniform disc */
+  const sizeScale = 1 + (rnd() - 0.5) * 2 * config.sizeJitter;
+  const spin = config.spinMin + rnd() * Math.max(0, config.spinMax - config.spinMin);
+  const rotation = rnd() * Math.PI * 2;
+  return { life, angle, speed, originAngle, originRadius, sizeScale, spin, rotation };
+}
+
+/* The motion, in closed form.
+
+   With linear drag the velocity obeys  dv/dt = g - k*v, whose solution is
+
+       v(t) = (v0 - g/k) e^(-kt) + g/k
+       p(t) = p0 + (v0 - g/k)(1 - e^(-kt))/k + (g/k) t
+
+   and with k = 0 it degenerates to the parabola everyone knows. Both are here,
+   because the k -> 0 limit of the first expression is 0/0 and evaluating it
+   numerically at small k loses every significant figure. */
+function motionAt(p0, v0, g, k, t) {
+  if (k > 1e-9) {
+    const e = Math.exp(-k * t);
+    const terminal = g / k;
+    return {
+      p: p0 + ((v0 - terminal) * (1 - e)) / k + terminal * t,
+      v: (v0 - terminal) * e + terminal,
+    };
+  }
+  return { p: p0 + v0 * t + 0.5 * g * t * t, v: v0 + g * t };
+}
+
+function lerp(a, b, u) { return a + (b - a) * u; }
+
+function hexToRgb(hex) {
+  const h = String(hex).replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function particleAt(config, index, t) {
+  const born = emissionTime(config, index);
+  if (!isFinite(born) || t < born) return null;
+  const s = particleSeedValues(config, index);
+  const age = t - born;
+  if (age >= s.life) return null;
+  const u = s.life <= 0 ? 1 : age / s.life;
+
+  const ox = Math.cos(s.originAngle) * s.originRadius;
+  const oy = Math.sin(s.originAngle) * s.originRadius;
+  const vx0 = Math.cos(s.angle) * s.speed;
+  const vy0 = Math.sin(s.angle) * s.speed;
+  const mx = motionAt(ox, vx0, config.gravityX, config.drag, age);
+  const my = motionAt(oy, vy0, config.gravityY, config.drag, age);
+
+  const su = Math.pow(u, Math.max(0.05, config.sizeCurve));
+  const au = Math.pow(u, Math.max(0.05, config.alphaCurve));
+  const a = hexToRgb(config.colourStart);
+  const b = hexToRgb(config.colourEnd);
+
+  return {
+    index,
+    age,
+    life: s.life,
+    u,
+    x: mx.p,
+    y: my.p,
+    vx: mx.v,
+    vy: my.v,
+    size: Math.max(0, lerp(config.sizeStart, config.sizeEnd, su) * s.sizeScale),
+    alpha: Math.max(0, Math.min(1, lerp(config.alphaStart, config.alphaEnd, au))),
+    rotation: s.rotation + (s.spin * Math.PI / 180) * age,
+    r: Math.round(lerp(a.r, b.r, u)),
+    g: Math.round(lerp(a.g, b.g, u)),
+    b: Math.round(lerp(a.b, b.b, u)),
+  };
+}
+
+/* Everything alive at time t. The scan is bounded: nothing emitted more than
+   lifeMax ago can still be alive, so the window is a slice of indices and not
+   the whole history. */
+function systemAt(config, t) {
+  const out = [];
+  const last = lastEmittedIndex(config, t);
+  if (last < 0) return out;
+  let first = 0;
+  if (config.mode === 'continuous') {
+    const rate = Math.max(1e-6, config.rate);
+    first = Math.max(0, Math.floor((t - config.lifeMax) * rate));
+  } else {
+    const per = Math.max(1, Math.round(config.burstCount));
+    if (config.loopInterval > 0) {
+      const oldestWave = Math.max(0, Math.floor((t - config.lifeMax) / config.loopInterval));
+      first = oldestWave * per;
+    }
+  }
+  for (let i = first; i <= last; i++) {
+    const p = particleAt(config, i, t);
+    if (p) out.push(p);
+  }
+  /* The cap keeps the NEWEST particles, which is what a real pool does when it
+     runs dry -- dropping the newest instead makes a burst vanish at its peak. */
+  if (out.length > config.maxParticles) return out.slice(out.length - config.maxParticles);
+  return out;
+}
+
+function emittedCount(config, t) {
+  const last = lastEmittedIndex(config, t);
+  let n = 0;
+  for (let i = 0; i <= last; i++) if (isFinite(emissionTime(config, i))) n++;
+  return n;
+}
+
+/* ---- Presets ------------------------------------------------------------------ */
+
+const PRESETS = {
+  sparks: { mode: 'burst', burstCount: 70, loopInterval: 1.1, lifeMin: 0.35, lifeMax: 0.9,
+    angleCentre: -90, angleSpread: 360, speedMin: 120, speedMax: 420, gravityY: 620, drag: 1.2,
+    sizeStart: 3.2, sizeEnd: 0.4, sizeJitter: 0.5, alphaStart: 1, alphaEnd: 0, alphaCurve: 2,
+    colourStart: '#fff2c4', colourEnd: '#ff6a1f', shape: 'spark', blend: 'additive',
+    spinMin: 0, spinMax: 0, originSpread: 2 },
+  explosion: { mode: 'burst', burstCount: 160, loopInterval: 1.6, lifeMin: 0.5, lifeMax: 1.4,
+    angleCentre: 0, angleSpread: 360, speedMin: 40, speedMax: 340, gravityY: 90, drag: 2.4,
+    sizeStart: 26, sizeEnd: 2, sizeJitter: 0.45, sizeCurve: 0.5, alphaStart: 0.95, alphaEnd: 0,
+    alphaCurve: 1.6, colourStart: '#ffe7a8', colourEnd: '#7a1200', shape: 'circle',
+    blend: 'additive', spinMin: -60, spinMax: 60, originSpread: 8 },
+  smoke: { mode: 'continuous', rate: 34, lifeMin: 1.8, lifeMax: 3.4, angleCentre: -90,
+    angleSpread: 42, speedMin: 18, speedMax: 52, gravityY: -22, drag: 0.55,
+    sizeStart: 10, sizeEnd: 62, sizeJitter: 0.35, sizeCurve: 0.7, alphaStart: 0.42, alphaEnd: 0,
+    alphaCurve: 1.4, colourStart: '#9aa6a2', colourEnd: '#2d3633', shape: 'circle',
+    blend: 'normal', spinMin: -30, spinMax: 30, originSpread: 7 },
+  fire: { mode: 'continuous', rate: 130, lifeMin: 0.45, lifeMax: 1.1, angleCentre: -90,
+    angleSpread: 52, speedMin: 40, speedMax: 130, gravityY: -130, drag: 1.1,
+    sizeStart: 15, sizeEnd: 1.5, sizeJitter: 0.4, sizeCurve: 0.8, alphaStart: 0.85, alphaEnd: 0,
+    alphaCurve: 1.5, colourStart: '#fff0a8', colourEnd: '#ff2a00', shape: 'circle',
+    blend: 'additive', spinMin: 0, spinMax: 0, originSpread: 9 },
+  magic: { mode: 'continuous', rate: 70, lifeMin: 0.9, lifeMax: 1.8, angleCentre: -90,
+    angleSpread: 360, speedMin: 12, speedMax: 90, gravityY: -40, drag: 1.6,
+    sizeStart: 2.5, sizeEnd: 7, sizeJitter: 0.5, sizeCurve: 0.6, alphaStart: 0.1, alphaEnd: 0,
+    alphaCurve: 0.4, colourStart: '#8ad9ff', colourEnd: '#c77bff', shape: 'ring',
+    blend: 'additive', spinMin: -200, spinMax: 200, originSpread: 26 },
+  confetti: { mode: 'burst', burstCount: 120, loopInterval: 2.2, lifeMin: 1.6, lifeMax: 3.2,
+    angleCentre: -90, angleSpread: 120, speedMin: 160, speedMax: 460, gravityY: 420, drag: 1.5,
+    sizeStart: 7, sizeEnd: 7, sizeJitter: 0.4, alphaStart: 1, alphaEnd: 0, alphaCurve: 5,
+    colourStart: '#ff4d6d', colourEnd: '#4dd4ff', shape: 'square', blend: 'normal',
+    spinMin: -520, spinMax: 520, originSpread: 4 },
+  rain: { mode: 'continuous', rate: 220, lifeMin: 0.7, lifeMax: 0.95, angleCentre: 96,
+    angleSpread: 5, speedMin: 420, speedMax: 620, gravityY: 300, drag: 0,
+    sizeStart: 1.6, sizeEnd: 1.6, sizeJitter: 0.3, alphaStart: 0.55, alphaEnd: 0.2,
+    colourStart: '#9fd6ff', colourEnd: '#5f88b0', shape: 'spark', blend: 'normal',
+    spinMin: 0, spinMax: 0, originSpread: 300 },
+  trail: { mode: 'continuous', rate: 160, lifeMin: 0.25, lifeMax: 0.55, angleCentre: 0,
+    angleSpread: 360, speedMin: 0, speedMax: 26, gravityY: 0, drag: 3,
+    sizeStart: 9, sizeEnd: 0, sizeJitter: 0.25, alphaStart: 0.8, alphaEnd: 0,
+    colourStart: '#66ffcc', colourEnd: '#0b6b52', shape: 'circle', blend: 'additive',
+    spinMin: 0, spinMax: 0, originSpread: 3 },
+};
+
+function preset(name) {
+  return { ...DEFAULTS, ...(PRESETS[name] || {}), seed: Math.floor(Math.random() * 100000) };
+}
+
+/* ---- Export ------------------------------------------------------------------- */
+
+function n(x, places = 3) {
+  return Number.isFinite(x) ? String(Number(x.toFixed(places))) : '0';
+}
+
+function exportCode(config, lang) {
+  if (lang === 'json') return JSON.stringify({ generator: 'particle-forge.slippylabs.com', ...config }, null, 2);
+  if (lang === 'csharp') {
+    return `// particle-forge.slippylabs.com
+// A particle system as a pure function of time: nothing is stored between
+// frames, so the output is identical at any frame rate and can be rewound.
+public static class Effect
+{
+    public const int   Seed        = ${Math.round(config.seed)};
+    public const float Rate        = ${n(config.rate)}f;      // per second
+    public const float LifeMin     = ${n(config.lifeMin)}f, LifeMax = ${n(config.lifeMax)}f;
+    public const float SpeedMin    = ${n(config.speedMin)}f, SpeedMax = ${n(config.speedMax)}f;
+    public const float AngleCentre = ${n(config.angleCentre)}f, AngleSpread = ${n(config.angleSpread)}f;
+    public static readonly Vector2 Gravity = new Vector2(${n(config.gravityX)}f, ${n(config.gravityY)}f);
+    public const float Drag        = ${n(config.drag)}f;      // v(t) = (v0 - g/k)e^-kt + g/k
+
+    static float Rand(int index, int draw)
+    {
+        uint h = (uint)(Seed ^ 0x9e3779b9);
+        h = (h ^ (uint)(index + 0x85ebca6b)) * 0xc2b2ae35u;
+        h ^= h >> 15;
+        for (int i = 0; i <= draw; i++) { h += 0x6d2b79f5u; uint t = (h ^ (h >> 15)) * (1u | h);
+            t = (t + ((t ^ (t >> 7)) * (61u | t))) ^ t; if (i == draw) return ((t ^ (t >> 14))) / 4294967296f; }
+        return 0f;
+    }
+
+    // Position of a particle at age t, in closed form.
+    public static Vector2 PositionAt(Vector2 v0, float t)
+    {
+        if (Drag > 1e-9f)
+        {
+            float e = Mathf.Exp(-Drag * t);
+            Vector2 terminal = Gravity / Drag;
+            return (v0 - terminal) * ((1f - e) / Drag) + terminal * t;
+        }
+        return v0 * t + 0.5f * t * t * Gravity;
+    }
+}`;
+  }
+  return `// particle-forge.slippylabs.com
+// A particle system as a pure function of time. Nothing is stored between
+// frames, so this looks identical at 30, 60 or 144 fps and can be scrubbed.
+const EFFECT = ${JSON.stringify(config, null, 2).replace(/\n/g, '\n')};
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Each particle gets its own stream, keyed on its index -- so the effect does
+// not depend on how many frames have gone by.
+function particleRandom(seed, index) {
+  let h = (seed ^ 0x9e3779b9) >>> 0;
+  h = Math.imul(h ^ (index + 0x85ebca6b), 0xc2b2ae35) >>> 0;
+  return mulberry32((h ^ (h >>> 15)) >>> 0);
+}
+
+function motionAt(p0, v0, g, k, t) {
+  if (k > 1e-9) {
+    const e = Math.exp(-k * t), terminal = g / k;
+    return p0 + (v0 - terminal) * (1 - e) / k + terminal * t;
+  }
+  return p0 + v0 * t + 0.5 * g * t * t;
+}
+
+// Returns every particle alive at time t. Draw them wherever you like.
+function systemAt(t, cfg = EFFECT) {
+  const out = [];
+  const rate = Math.max(1e-6, cfg.rate);
+  const last = Math.floor(t * rate);
+  const first = Math.max(0, Math.floor((t - cfg.lifeMax) * rate));
+  for (let i = first; i <= last; i++) {
+    const rnd = particleRandom(cfg.seed, i);
+    const life = cfg.lifeMin + rnd() * (cfg.lifeMax - cfg.lifeMin);
+    const angle = (cfg.angleCentre + (rnd() - 0.5) * cfg.angleSpread) * Math.PI / 180;
+    const speed = cfg.speedMin + rnd() * (cfg.speedMax - cfg.speedMin);
+    const oa = rnd() * Math.PI * 2, orad = Math.sqrt(rnd()) * cfg.originSpread;
+    const sizeScale = 1 + (rnd() - 0.5) * 2 * cfg.sizeJitter;
+    const age = t - i / rate;
+    if (age < 0 || age >= life) continue;
+    const u = age / life;
+    out.push({
+      x: motionAt(Math.cos(oa) * orad, Math.cos(angle) * speed, cfg.gravityX, cfg.drag, age),
+      y: motionAt(Math.sin(oa) * orad, Math.sin(angle) * speed, cfg.gravityY, cfg.drag, age),
+      size: (cfg.sizeStart + (cfg.sizeEnd - cfg.sizeStart) * Math.pow(u, cfg.sizeCurve)) * sizeScale,
+      alpha: cfg.alphaStart + (cfg.alphaEnd - cfg.alphaStart) * Math.pow(u, cfg.alphaCurve),
+      u,
+    });
+  }
+  return out;
+}`;
+}
+
+/* ==== UI ==== */
+
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+const sctx = stage.getContext('2d');
+
+let config = preset('sparks');
+let playing = true;
+let startWall = performance.now();
+let simTime = 0;
+let peakAlive = 0;
+let darkBg = true;
+let emitter = { x: 320, y: 300 };
+
+const SPEC = [
+  ['mode', 'select', 'Emission', ['continuous', 'burst']],
+  ['rate', 'range', 'Rate (per second)', 1, 500, 1],
+  ['burstCount', 'range', 'Burst size', 1, 400, 1],
+  ['loopInterval', 'range', 'Repeat every (s)', 0, 5, 0.05],
+  ['maxParticles', 'range', 'Max alive', 50, 3000, 10],
+  ['lifeMin', 'range', 'Lifetime min (s)', 0.05, 5, 0.05],
+  ['lifeMax', 'range', 'Lifetime max (s)', 0.05, 6, 0.05],
+  ['originSpread', 'range', 'Emit radius', 0, 320, 1],
+  ['angleCentre', 'range', 'Direction (deg)', -180, 180, 1],
+  ['angleSpread', 'range', 'Spread (deg)', 0, 360, 1],
+  ['speedMin', 'range', 'Speed min', 0, 700, 5],
+  ['speedMax', 'range', 'Speed max', 0, 900, 5],
+  ['gravityX', 'range', 'Gravity X', -800, 800, 10],
+  ['gravityY', 'range', 'Gravity Y', -800, 800, 10],
+  ['drag', 'range', 'Drag', 0, 6, 0.05],
+  ['sizeStart', 'range', 'Size at birth', 0, 80, 0.5],
+  ['sizeEnd', 'range', 'Size at death', 0, 80, 0.5],
+  ['sizeJitter', 'range', 'Size jitter', 0, 1, 0.05],
+  ['sizeCurve', 'range', 'Size curve', 0.2, 4, 0.05],
+  ['alphaStart', 'range', 'Alpha at birth', 0, 1, 0.01],
+  ['alphaEnd', 'range', 'Alpha at death', 0, 1, 0.01],
+  ['alphaCurve', 'range', 'Alpha curve', 0.2, 6, 0.05],
+  ['spinMin', 'range', 'Spin min (deg/s)', -720, 720, 10],
+  ['spinMax', 'range', 'Spin max (deg/s)', -720, 720, 10],
+  ['colourStart', 'colour', 'Colour at birth'],
+  ['colourEnd', 'colour', 'Colour at death'],
+  ['shape', 'select', 'Shape', ['circle', 'square', 'spark', 'ring']],
+  ['blend', 'select', 'Blending', ['additive', 'normal']],
+];
+
+function buildRack() {
+  const host = $('rack');
+  host.textContent = '';
+  for (const entry of SPEC) {
+    const [key, kind, label] = entry;
+    const row = document.createElement('div');
+    row.className = 'pf-dial';
+    const lab = document.createElement('label');
+    lab.className = 'tool-field-label';
+    lab.htmlFor = `dial-${key}`;
+    lab.textContent = label;
+    row.appendChild(lab);
+
+    if (kind === 'range') {
+      const [, , , min, max, step] = entry;
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.id = `dial-${key}`;
+      input.min = String(min);
+      input.max = String(max);
+      input.step = String(step);
+      input.value = String(config[key]);
+      const val = document.createElement('span');
+      val.className = 'pf-dial-value';
+      val.textContent = String(config[key]);
+      input.addEventListener('input', () => {
+        config[key] = Number(input.value);
+        val.textContent = String(config[key]);
+        refreshCode();
+      });
+      row.appendChild(input);
+      row.appendChild(val);
+    } else if (kind === 'colour') {
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.className = 'tool-color-input';
+      input.id = `dial-${key}`;
+      input.value = config[key];
+      input.addEventListener('input', () => { config[key] = input.value; refreshCode(); });
+      row.appendChild(input);
+    } else {
+      const [, , , options] = entry;
+      const sel = document.createElement('select');
+      sel.className = 'tool-select';
+      sel.id = `dial-${key}`;
+      for (const o of options) {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.textContent = o;
+        sel.appendChild(opt);
+      }
+      sel.value = config[key];
+      sel.addEventListener('change', () => { config[key] = sel.value; refreshCode(); });
+      row.appendChild(sel);
+    }
+    host.appendChild(row);
+  }
+}
+
+function syncRack() {
+  for (const entry of SPEC) {
+    const key = entry[0];
+    const el = $(`dial-${key}`);
+    if (!el) continue;
+    el.value = String(config[key]);
+    const val = el.parentElement.querySelector('.pf-dial-value');
+    if (val) val.textContent = String(config[key]);
+  }
+}
+
+/* ---- drawing ---- */
+
+function drawParticle(p) {
+  sctx.globalAlpha = p.alpha;
+  sctx.fillStyle = `rgb(${p.r},${p.g},${p.b})`;
+  const x = emitter.x + p.x;
+  const y = emitter.y + p.y;
+  const s = p.size;
+  if (s <= 0) return;
+  if (config.shape === 'square') {
+    sctx.save();
+    sctx.translate(x, y);
+    sctx.rotate(p.rotation);
+    sctx.fillRect(-s / 2, -s / 2, s, s);
+    sctx.restore();
+  } else if (config.shape === 'spark') {
+    /* A spark is drawn along its own velocity, which is what makes rain look
+       like rain rather than like falling dots. */
+    const len = Math.max(2, Math.hypot(p.vx, p.vy) * 0.03);
+    sctx.save();
+    sctx.translate(x, y);
+    sctx.rotate(Math.atan2(p.vy, p.vx));
+    sctx.fillRect(-len, -s / 2, len * 2, Math.max(1, s));
+    sctx.restore();
+  } else if (config.shape === 'ring') {
+    sctx.strokeStyle = sctx.fillStyle;
+    sctx.lineWidth = Math.max(1, s * 0.22);
+    sctx.beginPath();
+    sctx.arc(x, y, s, 0, Math.PI * 2);
+    sctx.stroke();
+  } else {
+    sctx.beginPath();
+    sctx.arc(x, y, s, 0, Math.PI * 2);
+    sctx.fill();
+  }
+}
+
+function render(t) {
+  sctx.globalCompositeOperation = 'source-over';
+  sctx.globalAlpha = 1;
+  if (darkBg) {
+    sctx.fillStyle = '#04070a';
+    sctx.fillRect(0, 0, stage.width, stage.height);
+  } else {
+    const g = sctx.createLinearGradient(0, 0, 0, stage.height);
+    g.addColorStop(0, '#20303a');
+    g.addColorStop(1, '#0c1418');
+    sctx.fillStyle = g;
+    sctx.fillRect(0, 0, stage.width, stage.height);
+  }
+  sctx.globalCompositeOperation = config.blend === 'additive' ? 'lighter' : 'source-over';
+  const particles = systemAt(config, t);
+  for (const p of particles) drawParticle(p);
+  sctx.globalCompositeOperation = 'source-over';
+  sctx.globalAlpha = 1;
+
+  /* the emitter itself */
+  sctx.strokeStyle = 'rgba(57,255,143,0.5)';
+  sctx.lineWidth = 1;
+  sctx.beginPath();
+  sctx.moveTo(emitter.x - 8, emitter.y);
+  sctx.lineTo(emitter.x + 8, emitter.y);
+  sctx.moveTo(emitter.x, emitter.y - 8);
+  sctx.lineTo(emitter.x, emitter.y + 8);
+  sctx.stroke();
+
+  if (particles.length > peakAlive) peakAlive = particles.length;
+  $('stat-alive').textContent = String(particles.length);
+  $('stat-emitted').textContent = String(emittedCount(config, t));
+  $('stat-time').textContent = `${t.toFixed(2)} s`;
+  $('stat-peak').textContent = String(peakAlive);
+  $('cap-note').textContent = particles.length >= config.maxParticles
+    ? `At the cap of ${config.maxParticles}: the oldest particles are being dropped. Raise the cap, cut the rate, or shorten the lifetime.`
+    : '';
+}
+
+function frame() {
+  if (playing) simTime = (performance.now() - startWall) / 1000;
+  $('scrub-slider').value = String(Math.min(400, Math.round(simTime * 50)));
+  render(simTime);
+  requestAnimationFrame(frame);
+}
+
+/* ---- wiring ---- */
+
+$('preset-bar').addEventListener('click', (ev) => {
+  const btn = ev.target.closest('[data-preset]');
+  if (!btn) return;
+  config = preset(btn.dataset.preset);
+  syncRack();
+  refreshCode();
+  restart();
+});
+
+function restart() {
+  startWall = performance.now();
+  simTime = 0;
+  peakAlive = 0;
+}
+
+$('playpause-btn').addEventListener('click', () => {
+  playing = !playing;
+  if (playing) startWall = performance.now() - simTime * 1000;
+  $('playpause-btn').textContent = playing ? 'Pause' : 'Play';
+  $('playpause-btn').setAttribute('aria-pressed', String(playing));
+});
+$('restart-btn').addEventListener('click', restart);
+$('reseed-btn').addEventListener('click', () => {
+  config.seed = Math.floor(Math.random() * 100000);
+  refreshCode();
+  restart();
+});
+$('bg-btn').addEventListener('click', () => {
+  darkBg = !darkBg;
+  $('bg-btn').textContent = `Background: ${darkBg ? 'dark' : 'dusk'}`;
+});
+$('scrub-slider').addEventListener('input', () => {
+  playing = false;
+  $('playpause-btn').textContent = 'Play';
+  $('playpause-btn').setAttribute('aria-pressed', 'false');
+  simTime = Number($('scrub-slider').value) / 50;
+});
+
+stage.addEventListener('pointerdown', (ev) => {
+  const rect = stage.getBoundingClientRect();
+  emitter = {
+    x: ((ev.clientX - rect.left) / rect.width) * stage.width,
+    y: ((ev.clientY - rect.top) / rect.height) * stage.height,
+  };
+  ev.preventDefault();
+});
+
+function refreshCode() {
+  $('code-out').textContent = exportCode(config, $('lang-select').value);
+}
+$('lang-select').addEventListener('change', refreshCode);
+
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1400);
+}
+$('copy-btn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('code-out').textContent);
+    toast('Copied');
+  } catch (err) { toast('Clipboard blocked'); }
+});
+$('download-btn').addEventListener('click', () => {
+  const lang = $('lang-select').value;
+  const ext = lang === 'json' ? 'json' : lang === 'csharp' ? 'cs' : 'js';
+  const link = $('download-link');
+  const url = URL.createObjectURL(new Blob([$('code-out').textContent], { type: 'text/plain' }));
+  link.href = url;
+  link.download = `effect.${ext}`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+});
+
+window.__particles = {
+  systemAt, particleAt, emissionTime, lastEmittedIndex, emittedCount, motionAt,
+  particleSeedValues, particleRandom, exportCode, preset, PRESETS, DEFAULTS,
+  set(opts) { Object.assign(config, opts); syncRack(); refreshCode(); restart(); return { ...config }; },
+  load(name) { config = preset(name); syncRack(); refreshCode(); restart(); return { ...config }; },
+  get config() { return { ...config }; },
+  at(t) { return systemAt(config, t); },
+  get code() { return $('code-out').textContent; },
+};
+
+/* ---- boot ---- */
+buildRack();
+refreshCode();
+requestAnimationFrame(frame);
+</script>
+<!-- Slippy Deck: floating Slippy TV + jukebox player. Renders nothing unless admin.slippylabs.com/whoami confirms a signed-in account. -->
+<script defer src="https://slippylabs.com/deck/deck.js"></script>
+<!-- Slippy Labs sitewide privacy link. Self-contained on purpose: these sites
+     share no CSS, so it carries its own styles and inherits the page's text
+     colour instead of assuming a palette. position/z-index are load bearing --
+     the HUD theme's .starfield/.scanlines are fixed at z-index 0-1 and would
+     paint straight over an unpositioned footer.
+     The .page-wrap trim below is what keeps the bar on the first screen. -->
+<div class="sl-legal"><a href="https://slippylabs.com/privacy.html">Privacy</a></div>
+<style>
+.sl-legal{box-sizing:border-box;position:relative;z-index:3;height:64px;display:flex;align-items:center;justify-content:center;margin:0;padding:0 12px;font-family:"Consolas","SFMono-Regular",Menlo,Monaco,"Courier New",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.5}
+.sl-legal a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px}
+.sl-legal a:hover,.sl-legal a:focus-visible{text-decoration:underline;opacity:1}
+/* This page centres .page-wrap at min-height:100vh, which would push the bar a
+   whole screen below the fold. Give back exactly the bar height instead of
+   adding a scrollbar to a page that had none. */
+.page-wrap{min-height:calc(100vh - 64px)}
+</style>
+</body>
+</html>
